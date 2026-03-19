@@ -1,0 +1,1353 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BeastBot — AI Agent Documentation</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --bg2: #111118;
+    --bg3: #1a1a24;
+    --accent: #00ff88;
+    --accent2: #00ccff;
+    --accent3: #ff4466;
+    --accent4: #ffcc00;
+    --text: #e8e8f0;
+    --text2: #888899;
+    --border: rgba(0,255,136,0.15);
+    --glow: 0 0 20px rgba(0,255,136,0.3);
+    --glow2: 0 0 20px rgba(0,204,255,0.3);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    overflow-x: hidden;
+    cursor: crosshair;
+  }
+
+  /* GRID BACKGROUND */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,255,136,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,255,136,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* SCAN LINE */
+  body::after {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    animation: scanline 4s linear infinite;
+    z-index: 999;
+    opacity: 0.6;
+  }
+  @keyframes scanline { 0% { transform: translateY(0); } 100% { transform: translateY(100vh); } }
+
+  /* HERO */
+  header {
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 4rem 2rem;
+    overflow: hidden;
+  }
+  header::before {
+    content: '';
+    position: absolute;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(0,255,136,0.08) 0%, transparent 70%);
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+  .logo-badge {
+    display: inline-block;
+    border: 1px solid var(--accent);
+    padding: 0.4rem 1.2rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--accent);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 2rem;
+    animation: pulse-border 2s ease-in-out infinite;
+  }
+  @keyframes pulse-border {
+    0%,100% { box-shadow: 0 0 10px rgba(0,255,136,0.2); }
+    50% { box-shadow: 0 0 25px rgba(0,255,136,0.5); }
+  }
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(5rem, 15vw, 12rem);
+    line-height: 0.9;
+    letter-spacing: -2px;
+    background: linear-gradient(135deg, #fff 0%, var(--accent) 50%, var(--accent2) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: title-glow 3s ease-in-out infinite;
+  }
+  @keyframes title-glow {
+    0%,100% { filter: drop-shadow(0 0 20px rgba(0,255,136,0.3)); }
+    50% { filter: drop-shadow(0 0 40px rgba(0,255,136,0.7)); }
+  }
+  .subtitle {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.85rem;
+    color: var(--text2);
+    letter-spacing: 2px;
+    margin-top: 1rem;
+    margin-bottom: 3rem;
+  }
+  .hero-stats {
+    display: flex;
+    gap: 3rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .hero-stat {
+    text-align: center;
+    animation: float 3s ease-in-out infinite;
+  }
+  .hero-stat:nth-child(2) { animation-delay: 0.5s; }
+  .hero-stat:nth-child(3) { animation-delay: 1s; }
+  .hero-stat:nth-child(4) { animation-delay: 1.5s; }
+  @keyframes float {
+    0%,100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+  .hero-stat .num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 3rem;
+    color: var(--accent);
+    text-shadow: var(--glow);
+  }
+  .hero-stat .label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--text2);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  /* MAIN */
+  main {
+    position: relative;
+    z-index: 1;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+
+  /* SECTION HEADERS */
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    margin-top: 5rem;
+  }
+  .section-header::before {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent));
+    opacity: 0.3;
+  }
+  .section-header::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--accent), transparent);
+    opacity: 0.3;
+  }
+  .section-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem;
+    letter-spacing: 3px;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+
+  /* TERMINAL BOX */
+  .terminal {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0;
+    overflow: hidden;
+    box-shadow: var(--glow), inset 0 1px 0 rgba(255,255,255,0.05);
+    margin-bottom: 2rem;
+  }
+  .terminal-header {
+    background: var(--bg3);
+    padding: 0.7rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .dot-red { background: var(--accent3); }
+  .dot-yellow { background: var(--accent4); }
+  .dot-green { background: var(--accent); }
+  .terminal-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--text2);
+    margin-left: 0.5rem;
+  }
+  .terminal-body {
+    padding: 1.5rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.78rem;
+    line-height: 1.8;
+  }
+  .t-green { color: var(--accent); }
+  .t-blue { color: var(--accent2); }
+  .t-red { color: var(--accent3); }
+  .t-yellow { color: var(--accent4); }
+  .t-gray { color: var(--text2); }
+  .t-white { color: #fff; }
+
+  /* CARDS GRID */
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.2rem;
+    margin-bottom: 2rem;
+  }
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s ease;
+  }
+  .card:hover::before { transform: scaleX(1); }
+  .card:hover {
+    border-color: rgba(0,255,136,0.4);
+    transform: translateY(-3px);
+    box-shadow: var(--glow);
+  }
+  .card-icon {
+    font-size: 2rem;
+    margin-bottom: 0.8rem;
+    display: block;
+  }
+  .card-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.3rem;
+    letter-spacing: 1px;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+  }
+  .card-desc {
+    font-size: 0.83rem;
+    color: var(--text2);
+    line-height: 1.6;
+  }
+
+  /* COMMAND TABLE */
+  .cmd-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+  }
+  .cmd-item {
+    background: var(--bg3);
+    border: 1px solid rgba(0,255,136,0.08);
+    border-radius: 4px;
+    padding: 0.5rem 0.8rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--accent);
+    transition: all 0.2s ease;
+    cursor: default;
+  }
+  .cmd-item:hover {
+    background: rgba(0,255,136,0.08);
+    border-color: var(--accent);
+    box-shadow: var(--glow);
+  }
+  .cmd-item .cmd-category {
+    display: block;
+    font-size: 0.6rem;
+    color: var(--text2);
+    margin-bottom: 2px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  /* TECH STACK */
+  .tech-bar {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 2rem;
+    margin-bottom: 1rem;
+  }
+  .tech-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.7rem 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .tech-item:last-child { border-bottom: none; }
+  .tech-name {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--text);
+    width: 200px;
+    flex-shrink: 0;
+  }
+  .tech-bar-fill {
+    flex: 1;
+    height: 4px;
+    background: var(--bg3);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .tech-bar-inner {
+    height: 100%;
+    border-radius: 2px;
+    animation: bar-grow 1.5s ease forwards;
+    transform-origin: left;
+  }
+  @keyframes bar-grow {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+  }
+  .tech-pct {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--text2);
+    width: 40px;
+    text-align: right;
+  }
+
+  /* RANK SYSTEM */
+  .rank-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .rank-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.8rem 1.2rem;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: all 0.2s ease;
+  }
+  .rank-item:hover { border-color: rgba(0,255,136,0.3); }
+  .rank-badge {
+    font-size: 1.2rem;
+    width: 30px;
+    text-align: center;
+  }
+  .rank-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1rem;
+    letter-spacing: 1px;
+  }
+  .rank-perms {
+    font-size: 0.75rem;
+    color: var(--text2);
+    font-family: 'Space Mono', monospace;
+  }
+
+  /* DATABASE TABLE */
+  .db-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+  }
+  .db-table th {
+    background: var(--bg3);
+    color: var(--accent);
+    text-align: left;
+    padding: 0.7rem 1rem;
+    border: 1px solid var(--border);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+  }
+  .db-table td {
+    padding: 0.6rem 1rem;
+    border: 1px solid rgba(0,255,136,0.06);
+    color: var(--text2);
+    transition: background 0.2s;
+  }
+  .db-table tr:hover td { background: rgba(0,255,136,0.04); }
+  .db-table td:first-child { color: var(--accent2); }
+
+  /* FEATURE TOGGLE */
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1rem;
+  }
+  .feature-toggle {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .toggle-switch {
+    width: 44px; height: 22px;
+    background: var(--accent);
+    border-radius: 11px;
+    position: relative;
+    flex-shrink: 0;
+    box-shadow: var(--glow);
+  }
+  .toggle-switch::after {
+    content: '';
+    position: absolute;
+    width: 16px; height: 16px;
+    background: var(--bg);
+    border-radius: 50%;
+    top: 3px; right: 4px;
+    transition: right 0.2s;
+  }
+  .toggle-off { background: var(--bg3); box-shadow: none; }
+  .toggle-off::after { right: auto; left: 4px; }
+  .feature-name {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 500;
+  }
+  .feature-desc {
+    font-size: 0.72rem;
+    color: var(--text2);
+    margin-top: 2px;
+  }
+
+  /* FOOTER */
+  footer {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    padding: 4rem 2rem;
+    border-top: 1px solid var(--border);
+    margin-top: 5rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--text2);
+  }
+  footer span { color: var(--accent); }
+
+  /* ANIMATE IN */
+  [data-reveal] {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+  [data-reveal].visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-badge">⚡ AI Agent Knowledge Base v2.0</div>
+  <h1>BEASTBOT</h1>
+  <p class="subtitle">// WHATSAPP AUTOMATION SYSTEM — SESSION: ACTIVE — NODE.JS RUNTIME</p>
+  <div class="hero-stats">
+    <div class="hero-stat">
+      <div class="num">~6800</div>
+      <div class="label">Zeilen Code</div>
+    </div>
+    <div class="hero-stat">
+      <div class="num">180+</div>
+      <div class="label">Commands</div>
+    </div>
+    <div class="hero-stat">
+      <div class="num">15</div>
+      <div class="label">Menü-Kategorien</div>
+    </div>
+    <div class="hero-stat">
+      <div class="num">8</div>
+      <div class="label">DB-Tabellen</div>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- OVERVIEW -->
+  <div class="section-header" data-reveal>
+    <span class="section-title">// SYSTEM OVERVIEW</span>
+  </div>
+
+  <div class="terminal" data-reveal>
+    <div class="terminal-header">
+      <div class="dot dot-red"></div>
+      <div class="dot dot-yellow"></div>
+      <div class="dot dot-green"></div>
+      <span class="terminal-title">beastbot — system.info</span>
+    </div>
+    <div class="terminal-body">
+      <div><span class="t-green">$</span> <span class="t-blue">whoami</span></div>
+      <div><span class="t-gray">> </span><span class="t-white">BeastBot — WhatsApp Multi-Function Bot</span></div>
+      <br>
+      <div><span class="t-green">$</span> <span class="t-blue">cat</span> info.json</div>
+      <div><span class="t-gray">{</span></div>
+      <div>&nbsp;&nbsp;<span class="t-yellow">"name"</span>: <span class="t-green">"BeastBot"</span>,</div>
+      <div>&nbsp;&nbsp;<span class="t-yellow">"version"</span>: <span class="t-green">"2.1.0"</span>,</div>
+      <div>&nbsp;&nbsp;<span class="t-yellow">"owner"</span>: <span class="t-green">"Beastmeds (4367764694963)"</span>,</div>
+      <div>&nbsp;&nbsp;<span class="t-yellow">"co-owner"</span>: <span class="t-green">"Lian (4917672395249)"</span>,</div>
+      <div>&nbsp;&nbsp;<span class="t-yellow">"runtime"</span>: <span class="t-green">"Node.js"</span>,</div>
+      <div>&nbsp;&nbsp;<span class="t-yellow">"library"</span>: <span class="t-green">"@717development/baileys (WhatsApp Web API)"</span>,</div>
+      <div>&nbsp;&nbsp;<span class="t-yellow">"database"</span>: <span class="t-green">"SQLite (better-sqlite3) + JSON flat files"</span>,</div>
+      <div>&nbsp;&nbsp;<span class="t-yellow">"prefix"</span>: <span class="t-green">"/ (konfigurierbar per Chat)"</span>,</div>
+      <div>&nbsp;&nbsp;<span class="t-yellow">"language"</span>: <span class="t-green">"Deutsch (DE)"</span>,</div>
+      <div>&nbsp;&nbsp;<span class="t-yellow">"codeLines"</span>: <span class="t-blue">~6800</span>,</div>
+      <div>&nbsp;&nbsp;<span class="t-yellow">"commands"</span>: <span class="t-blue">180+</span>,</div>
+      <div>&nbsp;&nbsp;<span class="t-yellow">"sessionManager"</span>: <span class="t-green">"Multi-Session via useMultiFileAuthState"</span>,</div>
+      <div>&nbsp;&nbsp;<span class="t-yellow">"processManager"</span>: <span class="t-green">"PM2 (Prozessname: BB)"</span></div>
+      <div><span class="t-gray">}</span></div>
+    </div>
+  </div>
+
+  <!-- FEATURE CATEGORIES -->
+  <div class="section-header" data-reveal>
+    <span class="section-title">// FEATURE MODULES</span>
+  </div>
+
+  <div class="cards-grid" data-reveal>
+    <div class="card">
+      <span class="card-icon">🛡️</span>
+      <div class="card-title">MODERATION</div>
+      <p class="card-desc">Warn-System (3x → Kick), Mute/Unmute, Kick, Ban/Unban, AntiLink, AntiSpam, Anti-NSFW, Antibot, Badwords-Filter, Timeout-System</p>
+    </div>
+    <div class="card">
+      <span class="card-icon">💰</span>
+      <div class="card-title">ECONOMY</div>
+      <p class="card-desc">Vollständiges Economy-System: Cash, Bank, Gems. Daily/Weekly-Belohnungen, Work, Beg, Mine, Farm, Hunt. Slots, Roulette, Blackjack, Dice</p>
+    </div>
+    <div class="card">
+      <span class="card-icon">🤖</span>
+      <div class="card-title">KI-INTEGRATION</div>
+      <p class="card-desc">Claude AI, Groq, Nyxion AI, Axiom. Fragen, Zusammenfassungen, Übersetzungen, Gedichte, Geschichten, Code-Hilfe, Mathe, Definitionen</p>
+    </div>
+    <div class="card">
+      <span class="card-icon">🎵</span>
+      <div class="card-title">AUDIO & MEDIA</div>
+      <p class="card-desc">YouTube Download (Audio/Video), TikTok Download, Instagram Reel Download, 12 Audio-Effekte (Bassboost, Nightcore, 8D, Reverb etc.)</p>
+    </div>
+    <div class="card">
+      <span class="card-icon">👑</span>
+      <div class="card-title">PREMIUM SYSTEM</div>
+      <p class="card-desc">Premium-Mitgliedschaft (zeitbasiert), 3x Daily Bonus, halber Cooldown, Premium Casino (High Roller, Jackpot, Double), Crypto, Businesses</p>
+    </div>
+    <div class="card">
+      <span class="card-icon">🐾</span>
+      <div class="card-title">PET SYSTEM</div>
+      <p class="card-desc">Pet Hunt (Wildtiere fangen), Shop-Kauf, max. 5 Pets, Feed/Play/Info Commands, Seltene Pets (Legendär bis Normal), Cooldown-System</p>
+    </div>
+    <div class="card">
+      <span class="card-icon">🎣</span>
+      <div class="card-title">FISHING SYSTEM</div>
+      <p class="card-desc">45+ verschiedene Fische mit Zufalls-Chancen (0.00001% bis 15%). Legendäre Items: Meerjungfrau, Leviathan, Megalodon. Inventar & Verkauf</p>
+    </div>
+    <div class="card">
+      <span class="card-icon">🏘️</span>
+      <div class="card-title">GRUPPEN-FEATURES</div>
+      <p class="card-desc">Welcome/Goodbye (custom Text), Auto-Reactions, Auto-Sticker-Block, MuteGC, Leveling-XP pro Nachricht, Anti-Delete, Eilmeldungen</p>
+    </div>
+    <div class="card">
+      <span class="card-icon">🔐</span>
+      <div class="card-title">VERSCHLÜSSELUNG</div>
+      <p class="card-desc">Base64 En/Decode, Hex En/Decode, ROT13, URL-Encode/Decode, Caesar-Cipher, Binary, Morse Code</p>
+    </div>
+    <div class="card">
+      <span class="card-icon">🎮</span>
+      <div class="card-title">GAMES</div>
+      <p class="card-desc">Tic-Tac-Toe vs Bot (mit Einsatz), Blackjack (Hit/Stand), Slots, Roulette, Würfel, Stranger Things Mini-Games, Death Note Roleplay</p>
+    </div>
+    <div class="card">
+      <span class="card-icon">📡</span>
+      <div class="card-title">ADMIN / OWNER</div>
+      <p class="card-desc">Multi-Session-Management, QR-Code-Pairing, Pairing-Code, Session-Kill, Grouplist, Broadcast, Reload via PM2, MC-Server-Control</p>
+    </div>
+    <div class="card">
+      <span class="card-icon">🆘</span>
+      <div class="card-title">SUPPORT SYSTEM</div>
+      <p class="card-desc">Ticket-System mit IDs, Reply-Funktion für Team, Entban-Anfragen mit Approval/Reject, Join-Anfragen, Supportgruppen-Konfiguration</p>
+    </div>
+  </div>
+
+  <!-- ALL COMMANDS -->
+  <div class="section-header" data-reveal>
+    <span class="section-title">// COMMAND REFERENCE</span>
+  </div>
+
+  <div class="terminal" data-reveal>
+    <div class="terminal-header">
+      <div class="dot dot-red"></div>
+      <div class="dot dot-yellow"></div>
+      <div class="dot dot-green"></div>
+      <span class="terminal-title">commands — 180+ befehle</span>
+    </div>
+    <div class="terminal-body">
+      <span class="t-green">// HAUPTMENÜ (15 Kategorien, Befehl: /menu [1-15])</span>
+    </div>
+  </div>
+
+  <div class="cmd-grid" data-reveal>
+    <!-- Main -->
+    <div class="cmd-item"><span class="cmd-category">MAIN</span>/ping</div>
+    <div class="cmd-item"><span class="cmd-category">MAIN</span>/menu</div>
+    <div class="cmd-item"><span class="cmd-category">MAIN</span>/owner</div>
+    <div class="cmd-item"><span class="cmd-category">MAIN</span>/runtime</div>
+    <div class="cmd-item"><span class="cmd-category">MAIN</span>/server</div>
+    <div class="cmd-item"><span class="cmd-category">MAIN</span>/support</div>
+    <div class="cmd-item"><span class="cmd-category">MAIN</span>/tos / /agb / /dsgvo</div>
+    <div class="cmd-item"><span class="cmd-category">MAIN</span>/community</div>
+    <div class="cmd-item"><span class="cmd-category">MAIN</span>/rules / /regeln</div>
+    <div class="cmd-item"><span class="cmd-category">MAIN</span>/version</div>
+    <div class="cmd-item"><span class="cmd-category">MAIN</span>/bewerben</div>
+    <!-- Admin -->
+    <div class="cmd-item"><span class="cmd-category">ADMIN</span>/setname</div>
+    <div class="cmd-item"><span class="cmd-category">ADMIN</span>/setdesc</div>
+    <div class="cmd-item"><span class="cmd-category">ADMIN</span>/warn @user</div>
+    <div class="cmd-item"><span class="cmd-category">ADMIN</span>/resetwarn</div>
+    <div class="cmd-item"><span class="cmd-category">ADMIN</span>/warns</div>
+    <div class="cmd-item"><span class="cmd-category">ADMIN</span>/mute / /unmute</div>
+    <div class="cmd-item"><span class="cmd-category">ADMIN</span>/mutedlist</div>
+    <div class="cmd-item"><span class="cmd-category">ADMIN</span>/kick</div>
+    <div class="cmd-item"><span class="cmd-category">ADMIN</span>/promote / /demote</div>
+    <div class="cmd-item"><span class="cmd-category">ADMIN</span>/add</div>
+    <div class="cmd-item"><span class="cmd-category">ADMIN</span>/del</div>
+    <div class="cmd-item"><span class="cmd-category">ADMIN</span>/tagall</div>
+    <div class="cmd-item"><span class="cmd-category">ADMIN</span>/hidetag</div>
+    <div class="cmd-item"><span class="cmd-category">ADMIN</span>/grpinfo</div>
+    <div class="cmd-item"><span class="cmd-category">ADMIN</span>/grouplink</div>
+    <div class="cmd-item"><span class="cmd-category">ADMIN</span>/revoke</div>
+    <div class="cmd-item"><span class="cmd-category">ADMIN</span>/broadcast</div>
+    <div class="cmd-item"><span class="cmd-category">ADMIN</span>/antilink on/off</div>
+    <div class="cmd-item"><span class="cmd-category">ADMIN</span>/antidelete on/off</div>
+    <div class="cmd-item"><span class="cmd-category">ADMIN</span>/antinsfw on/off</div>
+    <div class="cmd-item"><span class="cmd-category">ADMIN</span>/antispam on/off</div>
+    <div class="cmd-item"><span class="cmd-category">ADMIN</span>/antibot on/off</div>
+    <div class="cmd-item"><span class="cmd-category">ADMIN</span>/welcome on/off/set</div>
+    <div class="cmd-item"><span class="cmd-category">ADMIN</span>/goodbye on/off/set</div>
+    <div class="cmd-item"><span class="cmd-category">ADMIN</span>/leveling on/off</div>
+    <div class="cmd-item"><span class="cmd-category">ADMIN</span>/mutegc on/off</div>
+    <div class="cmd-item"><span class="cmd-category">ADMIN</span>/autoreact on/off</div>
+    <div class="cmd-item"><span class="cmd-category">ADMIN</span>/autosticker on/off</div>
+    <div class="cmd-item"><span class="cmd-category">ADMIN</span>/badwords add/remove</div>
+    <div class="cmd-item"><span class="cmd-category">ADMIN</span>/el (Eilmeldung)</div>
+    <div class="cmd-item"><span class="cmd-category">ADMIN</span>/eld on/off</div>
+    <div class="cmd-item"><span class="cmd-category">ADMIN</span>/linkbypass</div>
+    <div class="cmd-item"><span class="cmd-category">ADMIN</span>/unlinkbypass</div>
+    <div class="cmd-item"><span class="cmd-category">ADMIN</span>/selfpromote / /sp</div>
+    <div class="cmd-item"><span class="cmd-category">ADMIN</span>/selfdemote / /sd</div>
+    <div class="cmd-item"><span class="cmd-category">ADMIN</span>/setup / /setupaccept</div>
+    <div class="cmd-item"><span class="cmd-category">ADMIN</span>/testfeatures</div>
+    <div class="cmd-item"><span class="cmd-category">ADMIN</span>/setprefix</div>
+    <!-- Economy -->
+    <div class="cmd-item"><span class="cmd-category">ECONOMY</span>/register</div>
+    <div class="cmd-item"><span class="cmd-category">ECONOMY</span>/me / /profile</div>
+    <div class="cmd-item"><span class="cmd-category">ECONOMY</span>/balance / /bal</div>
+    <div class="cmd-item"><span class="cmd-category">ECONOMY</span>/daily</div>
+    <div class="cmd-item"><span class="cmd-category">ECONOMY</span>/weekly</div>
+    <div class="cmd-item"><span class="cmd-category">ECONOMY</span>/work</div>
+    <div class="cmd-item"><span class="cmd-category">ECONOMY</span>/beg</div>
+    <div class="cmd-item"><span class="cmd-category">ECONOMY</span>/mine</div>
+    <div class="cmd-item"><span class="cmd-category">ECONOMY</span>/hunt</div>
+    <div class="cmd-item"><span class="cmd-category">ECONOMY</span>/farm</div>
+    <div class="cmd-item"><span class="cmd-category">ECONOMY</span>/rob @user</div>
+    <div class="cmd-item"><span class="cmd-category">ECONOMY</span>/crime</div>
+    <div class="cmd-item"><span class="cmd-category">ECONOMY</span>/slots</div>
+    <div class="cmd-item"><span class="cmd-category">ECONOMY</span>/roulette</div>
+    <div class="cmd-item"><span class="cmd-category">ECONOMY</span>/dice</div>
+    <div class="cmd-item"><span class="cmd-category">ECONOMY</span>/blackjack /bj</div>
+    <div class="cmd-item"><span class="cmd-category">ECONOMY</span>/bank deposit/withdraw</div>
+    <div class="cmd-item"><span class="cmd-category">ECONOMY</span>/pay @user</div>
+    <div class="cmd-item"><span class="cmd-category">ECONOMY</span>/topbalance</div>
+    <div class="cmd-item"><span class="cmd-category">ECONOMY</span>/topcoins</div>
+    <div class="cmd-item"><span class="cmd-category">ECONOMY</span>/topxp</div>
+    <div class="cmd-item"><span class="cmd-category">ECONOMY</span>/addcoins / /delcoins</div>
+    <!-- Premium -->
+    <div class="cmd-item"><span class="cmd-category">PREMIUM</span>/premium add @user</div>
+    <div class="cmd-item"><span class="cmd-category">PREMIUM</span>/spawnmoney</div>
+    <div class="cmd-item"><span class="cmd-category">PREMIUM</span>/settitle</div>
+    <div class="cmd-item"><span class="cmd-category">PREMIUM</span>/setcolor</div>
+    <div class="cmd-item"><span class="cmd-category">PREMIUM</span>/setemoji</div>
+    <div class="cmd-item"><span class="cmd-category">PREMIUM</span>/highroller</div>
+    <div class="cmd-item"><span class="cmd-category">PREMIUM</span>/jackpot</div>
+    <div class="cmd-item"><span class="cmd-category">PREMIUM</span>/double</div>
+    <div class="cmd-item"><span class="cmd-category">PREMIUM</span>/crypto / /market</div>
+    <div class="cmd-item"><span class="cmd-category">PREMIUM</span>/buycrypto</div>
+    <!-- Fish -->
+    <div class="cmd-item"><span class="cmd-category">FISHING</span>/fish</div>
+    <div class="cmd-item"><span class="cmd-category">FISHING</span>/fishlist</div>
+    <div class="cmd-item"><span class="cmd-category">FISHING</span>/sell</div>
+    <div class="cmd-item"><span class="cmd-category">FISHING</span>/inventory</div>
+    <!-- Pets -->
+    <div class="cmd-item"><span class="cmd-category">PETS</span>/pets</div>
+    <div class="cmd-item"><span class="cmd-category">PETS</span>/pethunt hunt</div>
+    <div class="cmd-item"><span class="cmd-category">PETS</span>/pethunt name</div>
+    <div class="cmd-item"><span class="cmd-category">PETS</span>/petfeed</div>
+    <div class="cmd-item"><span class="cmd-category">PETS</span>/petplay</div>
+    <div class="cmd-item"><span class="cmd-category">PETS</span>/petinfo</div>
+    <div class="cmd-item"><span class="cmd-category">PETS</span>/sellpet</div>
+    <div class="cmd-item"><span class="cmd-category">PETS</span>/shop pets</div>
+    <!-- AI -->
+    <div class="cmd-item"><span class="cmd-category">KI</span>/ai / /ask</div>
+    <div class="cmd-item"><span class="cmd-category">KI</span>/nyx (Nyxion AI)</div>
+    <div class="cmd-item"><span class="cmd-category">KI</span>/nyxion</div>
+    <div class="cmd-item"><span class="cmd-category">KI</span>/imagine</div>
+    <div class="cmd-item"><span class="cmd-category">KI</span>/summarize</div>
+    <div class="cmd-item"><span class="cmd-category">KI</span>/translate</div>
+    <div class="cmd-item"><span class="cmd-category">KI</span>/joke</div>
+    <div class="cmd-item"><span class="cmd-category">KI</span>/poem</div>
+    <div class="cmd-item"><span class="cmd-category">KI</span>/story</div>
+    <div class="cmd-item"><span class="cmd-category">KI</span>/riddle</div>
+    <div class="cmd-item"><span class="cmd-category">KI</span>/codehelp</div>
+    <div class="cmd-item"><span class="cmd-category">KI</span>/math</div>
+    <div class="cmd-item"><span class="cmd-category">KI</span>/define</div>
+    <div class="cmd-item"><span class="cmd-category">KI</span>/tts</div>
+    <div class="cmd-item"><span class="cmd-category">KI</span>/config ai</div>
+    <!-- Audio -->
+    <div class="cmd-item"><span class="cmd-category">AUDIO</span>/play</div>
+    <div class="cmd-item"><span class="cmd-category">AUDIO</span>/mp4</div>
+    <div class="cmd-item"><span class="cmd-category">AUDIO</span>/spotify</div>
+    <div class="cmd-item"><span class="cmd-category">AUDIO</span>/tok / /tok2</div>
+    <div class="cmd-item"><span class="cmd-category">AUDIO</span>/ig</div>
+    <div class="cmd-item"><span class="cmd-category">AUDIO</span>/bassboost</div>
+    <div class="cmd-item"><span class="cmd-category">AUDIO</span>/nightcore</div>
+    <div class="cmd-item"><span class="cmd-category">AUDIO</span>/slowed</div>
+    <div class="cmd-item"><span class="cmd-category">AUDIO</span>/reverb</div>
+    <div class="cmd-item"><span class="cmd-category">AUDIO</span>/8d</div>
+    <div class="cmd-item"><span class="cmd-category">AUDIO</span>/earrape</div>
+    <div class="cmd-item"><span class="cmd-category">AUDIO</span>/chipmunk</div>
+    <div class="cmd-item"><span class="cmd-category">AUDIO</span>/vaporwave</div>
+    <div class="cmd-item"><span class="cmd-category">AUDIO</span>/spedup</div>
+    <div class="cmd-item"><span class="cmd-category">AUDIO</span>/deep</div>
+    <div class="cmd-item"><span class="cmd-category">AUDIO</span>/echo</div>
+    <!-- Owner -->
+    <div class="cmd-item"><span class="cmd-category">OWNER</span>/reload / /restart</div>
+    <div class="cmd-item"><span class="cmd-category">OWNER</span>/log</div>
+    <div class="cmd-item"><span class="cmd-category">OWNER</span>/grouplist / /grouplist2</div>
+    <div class="cmd-item"><span class="cmd-category">OWNER</span>/listsessions</div>
+    <div class="cmd-item"><span class="cmd-category">OWNER</span>/newqr / /newqr1 / /newqr2</div>
+    <div class="cmd-item"><span class="cmd-category">OWNER</span>/newpair</div>
+    <div class="cmd-item"><span class="cmd-category">OWNER</span>/killsession</div>
+    <div class="cmd-item"><span class="cmd-category">OWNER</span>/setrank / /delrank</div>
+    <div class="cmd-item"><span class="cmd-category">OWNER</span>/ban / /unban</div>
+    <div class="cmd-item"><span class="cmd-category">OWNER</span>/ipban / /ipunban</div>
+    <div class="cmd-item"><span class="cmd-category">OWNER</span>/pban / /unpban</div>
+    <div class="cmd-item"><span class="cmd-category">OWNER</span>/startmc / /stopmc</div>
+    <div class="cmd-item"><span class="cmd-category">OWNER</span>/lockgroup / /unlockgroup</div>
+    <div class="cmd-item"><span class="cmd-category">OWNER</span>/broadcast / /broadcast2</div>
+    <div class="cmd-item"><span class="cmd-category">OWNER</span>/disable / /enable</div>
+    <div class="cmd-item"><span class="cmd-category">OWNER</span>/lid / /getlid</div>
+    <div class="cmd-item"><span class="cmd-category">OWNER</span>/addme / /addadmin</div>
+    <div class="cmd-item"><span class="cmd-category">OWNER</span>/leavegrp / /leave2</div>
+    <div class="cmd-item"><span class="cmd-category">OWNER</span>/nl (Newsletter)</div>
+    <div class="cmd-item"><span class="cmd-category">OWNER</span>/speedtest</div>
+    <div class="cmd-item"><span class="cmd-category">OWNER</span>/setstatus / /setbotname</div>
+    <!-- Fun -->
+    <div class="cmd-item"><span class="cmd-category">FUN</span>/hug / /kiss / /slap</div>
+    <div class="cmd-item"><span class="cmd-category">FUN</span>/pat / /poke / /cuddle</div>
+    <div class="cmd-item"><span class="cmd-category">FUN</span>/kill</div>
+    <div class="cmd-item"><span class="cmd-category">FUN</span>/penis</div>
+    <div class="cmd-item"><span class="cmd-category">FUN</span>/goon</div>
+    <div class="cmd-item"><span class="cmd-category">FUN</span>/afk</div>
+    <div class="cmd-item"><span class="cmd-category">FUN</span>/sticker</div>
+    <div class="cmd-item"><span class="cmd-category">FUN</span>/qr / /qrcode / /qrread</div>
+    <div class="cmd-item"><span class="cmd-category">FUN</span>/viewonce</div>
+    <div class="cmd-item"><span class="cmd-category">FUN</span>/getpic</div>
+    <div class="cmd-item"><span class="cmd-category">FUN</span>/timeout @user</div>
+    <!-- Misc -->
+    <div class="cmd-item"><span class="cmd-category">MISC</span>/encode / /decode</div>
+    <div class="cmd-item"><span class="cmd-category">MISC</span>/encodehex / /decodehex</div>
+    <div class="cmd-item"><span class="cmd-category">MISC</span>/rot13</div>
+    <div class="cmd-item"><span class="cmd-category">MISC</span>/urlencode</div>
+    <div class="cmd-item"><span class="cmd-category">MISC</span>/caesar</div>
+    <div class="cmd-item"><span class="cmd-category">MISC</span>/binary</div>
+    <div class="cmd-item"><span class="cmd-category">MISC</span>/morse</div>
+    <div class="cmd-item"><span class="cmd-category">MISC</span>/device</div>
+    <div class="cmd-item"><span class="cmd-category">MISC</span>/id</div>
+    <div class="cmd-item"><span class="cmd-category">MISC</span>/botinfo / /info</div>
+    <div class="cmd-item"><span class="cmd-category">MISC</span>/team</div>
+    <div class="cmd-item"><span class="cmd-category">MISC</span>/alledits</div>
+  </div>
+
+  <!-- DATABASE -->
+  <div class="section-header" data-reveal>
+    <span class="section-title">// DATABASE SCHEMA</span>
+  </div>
+
+  <div class="terminal" data-reveal>
+    <div class="terminal-header">
+      <div class="dot dot-red"></div>
+      <div class="dot dot-yellow"></div>
+      <div class="dot dot-green"></div>
+      <span class="terminal-title">SQLite — stormbot_users.db</span>
+    </div>
+    <div class="terminal-body" style="padding:0;">
+      <table class="db-table">
+        <tr>
+          <th>Tabelle</th>
+          <th>Felder</th>
+          <th>Zweck</th>
+        </tr>
+        <tr>
+          <td>users</td>
+          <td>jid, name, balance, xp, level, lastHuntTime</td>
+          <td>Hauptnutzer-Daten, XP/Level-System</td>
+        </tr>
+        <tr>
+          <td>economy</td>
+          <td>jid, cash, bank, gems, lastDaily, lastWeekly, lastWork, lastBeg, jailedUntil</td>
+          <td>Erweitertes Economy-System getrennt von balance</td>
+        </tr>
+        <tr>
+          <td>inventory</td>
+          <td>jid, fish, count (PRIMARY KEY: jid+fish)</td>
+          <td>Fisch-Inventar jedes Nutzers</td>
+        </tr>
+        <tr>
+          <td>pets</td>
+          <td>id, jid, petName, hunger, health, level, lastFed</td>
+          <td>Pet-System mit Stats</td>
+        </tr>
+        <tr>
+          <td>items</td>
+          <td>id, jid, itemName, amount</td>
+          <td>Item-Inventar (Heiltränke, Futter etc.)</td>
+        </tr>
+        <tr>
+          <td>premium</td>
+          <td>jid, isPremium, premiumUntil, premiumLevel, title, color, emoji, autowork, autofish, multidaily, lastSpawnmoney, spawnmoneyToday</td>
+          <td>Premium-Mitgliedschaft & Customization</td>
+        </tr>
+        <tr>
+          <td>businesses</td>
+          <td>id, jid, businessType, level, lastCollection, earnings</td>
+          <td>Business-System für Premium</td>
+        </tr>
+        <tr>
+          <td>crypto</td>
+          <td>jid, symbol, amount, boughtAt (PRIMARY KEY: jid+symbol)</td>
+          <td>Krypto-Portfolio</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="terminal" data-reveal style="margin-top:1rem;">
+    <div class="terminal-header">
+      <div class="dot dot-red"></div>
+      <div class="dot dot-yellow"></div>
+      <div class="dot dot-green"></div>
+      <span class="terminal-title">JSON Flat-Files — /data/ und root</span>
+    </div>
+    <div class="terminal-body">
+      <table class="db-table">
+        <tr><th>Datei</th><th>Inhalt</th></tr>
+        <tr><td>data/users.json</td><td>Spiegel aller DB-User (Sync-System)</td></tr>
+        <tr><td>data/groupFeatures.json</td><td>Per-Gruppe Einstellungen (welcome, antilink etc.)</td></tr>
+        <tr><td>data/codes.json</td><td>Creator Codes & Redeem Codes</td></tr>
+        <tr><td>data/disabledCommands.json</td><td>Global deaktivierte Befehle</td></tr>
+        <tr><td>data/userConfigs.json</td><td>User-Konfiguration (KI-Modell, Sprache, Theme)</td></tr>
+        <tr><td>data/registrations.json</td><td>Registrierungszeitpunkte</td></tr>
+        <tr><td>data/welcome.json</td><td>Welcome-Nachrichten-Konfiguration</td></tr>
+        <tr><td>ranksConfig.json</td><td>Rang-Zuweisungen (JID → Rang)</td></tr>
+        <tr><td>warnedUsers.json</td><td>Verwarnungen pro Gruppe</td></tr>
+        <tr><td>mutedUsers.json</td><td>Gemutete User pro Gruppe</td></tr>
+        <tr><td>antilinkGroups.json</td><td>AntiLink-aktivierte Gruppen</td></tr>
+        <tr><td>data/banned.json</td><td>Gebannte User (JID + Grund)</td></tr>
+        <tr><td>data/ipbans.json</td><td>IP/LID-Bans</td></tr>
+        <tr><td>data/afk.json</td><td>AFK-Status aller User</td></tr>
+        <tr><td>support.json</td><td>Support-Tickets</td></tr>
+        <tr><td>groupConfig.json</td><td>Support- & Join-Gruppen-IDs</td></tr>
+        <tr><td>prefixes.json</td><td>Individuelle Prefixe pro Chat</td></tr>
+        <tr><td>antidelete_config.json</td><td>Anti-Delete Konfiguration</td></tr>
+        <tr><td>joinRequests_numbered.json</td><td>Beitrittsanfragen mit IDs</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- RANK SYSTEM -->
+  <div class="section-header" data-reveal>
+    <span class="section-title">// RANK SYSTEM</span>
+  </div>
+
+  <div class="rank-list" data-reveal>
+    <div class="rank-item">
+      <span class="rank-badge">👑</span>
+      <div>
+        <div class="rank-name" style="color:#ffcc00">Inhaber</div>
+        <div class="rank-perms">Alle Befehle · Session-Management · Ban/Unban · Rang vergeben · Reload · Broadcast</div>
+      </div>
+    </div>
+    <div class="rank-item">
+      <span class="rank-badge">🛡️</span>
+      <div>
+        <div class="rank-name" style="color:#00ccff">Stellvertreter Inhaber</div>
+        <div class="rank-perms">Alle Admin-Befehle · Rang vergeben (außer Inhaber) · Session-QR · Broadcast</div>
+      </div>
+    </div>
+    <div class="rank-item">
+      <span class="rank-badge">🛡️</span>
+      <div>
+        <div class="rank-name" style="color:#00ff88">Moderator</div>
+        <div class="rank-perms">Broadcast · Ban · Supporttickets beantworten · Gruppen-Setup · Join-Anfragen annehmen</div>
+      </div>
+    </div>
+    <div class="rank-item">
+      <span class="rank-badge">🧰</span>
+      <div>
+        <div class="rank-name" style="color:#ff8844">Supporter</div>
+        <div class="rank-perms">Supporttickets beantworten · Entban-Anfragen bearbeiten</div>
+      </div>
+    </div>
+    <div class="rank-item">
+      <span class="rank-badge">💻</span>
+      <div>
+        <div class="rank-name" style="color:#aa88ff">Entwickler</div>
+        <div class="rank-perms">Zugriff auf /givecase (Code-Extraktion)</div>
+      </div>
+    </div>
+    <div class="rank-item">
+      <span class="rank-badge">👑</span>
+      <div>
+        <div class="rank-name" style="color:#ff44aa">Premium</div>
+        <div class="rank-perms">Premium-Features: 3x Daily, Spawnmoney, Casino, Crypto, Customization, Premium vergeben</div>
+      </div>
+    </div>
+    <div class="rank-item">
+      <span class="rank-badge">👤</span>
+      <div>
+        <div class="rank-name">Member (Standard)</div>
+        <div class="rank-perms">Economy · Fishing · Pets · KI · Fun-Commands · Gruppen-Befehle</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TECH STACK -->
+  <div class="section-header" data-reveal>
+    <span class="section-title">// TECH STACK</span>
+  </div>
+
+  <div class="tech-bar" data-reveal>
+    <div class="tech-item">
+      <div class="tech-name">Node.js / JavaScript</div>
+      <div class="tech-bar-fill"><div class="tech-bar-inner" style="width:100%;background:linear-gradient(90deg,#00ff88,#00ccff)"></div></div>
+      <div class="tech-pct">Core</div>
+    </div>
+    <div class="tech-item">
+      <div class="tech-name">@717development/baileys</div>
+      <div class="tech-bar-fill"><div class="tech-bar-inner" style="width:100%;background:linear-gradient(90deg,#00ccff,#aa88ff)"></div></div>
+      <div class="tech-pct">WA API</div>
+    </div>
+    <div class="tech-item">
+      <div class="tech-name">better-sqlite3</div>
+      <div class="tech-bar-fill"><div class="tech-bar-inner" style="width:90%;background:linear-gradient(90deg,#ffcc00,#ff8844)"></div></div>
+      <div class="tech-pct">DB</div>
+    </div>
+    <div class="tech-item">
+      <div class="tech-name">ffmpeg (yt-dlp)</div>
+      <div class="tech-bar-fill"><div class="tech-bar-inner" style="width:85%;background:linear-gradient(90deg,#ff4466,#ff8844)"></div></div>
+      <div class="tech-pct">Media</div>
+    </div>
+    <div class="tech-item">
+      <div class="tech-name">Anthropic Claude API</div>
+      <div class="tech-bar-fill"><div class="tech-bar-inner" style="width:80%;background:linear-gradient(90deg,#aa88ff,#00ccff)"></div></div>
+      <div class="tech-pct">KI</div>
+    </div>
+    <div class="tech-item">
+      <div class="tech-name">Groq / Nyxion / Axiom</div>
+      <div class="tech-bar-fill"><div class="tech-bar-inner" style="width:70%;background:linear-gradient(90deg,#aa88ff,#ff4466)"></div></div>
+      <div class="tech-pct">Alt. KI</div>
+    </div>
+    <div class="tech-item">
+      <div class="tech-name">axios / node-fetch</div>
+      <div class="tech-bar-fill"><div class="tech-bar-inner" style="width:75%;background:linear-gradient(90deg,#00ff88,#ffcc00)"></div></div>
+      <div class="tech-pct">HTTP</div>
+    </div>
+    <div class="tech-item">
+      <div class="tech-name">pino (Logger)</div>
+      <div class="tech-bar-fill"><div class="tech-bar-inner" style="width:60%;background:linear-gradient(90deg,#888899,#aaaaaa)"></div></div>
+      <div class="tech-pct">Logs</div>
+    </div>
+    <div class="tech-item">
+      <div class="tech-name">PM2 (Process Manager)</div>
+      <div class="tech-bar-fill"><div class="tech-bar-inner" style="width:95%;background:linear-gradient(90deg,#00ff88,#ffcc00)"></div></div>
+      <div class="tech-pct">Deploy</div>
+    </div>
+    <div class="tech-item">
+      <div class="tech-name">wa-sticker-formatter</div>
+      <div class="tech-bar-fill"><div class="tech-bar-inner" style="width:50%;background:linear-gradient(90deg,#ff4466,#aa88ff)"></div></div>
+      <div class="tech-pct">Sticker</div>
+    </div>
+    <div class="tech-item">
+      <div class="tech-name">play-dl / yt-search</div>
+      <div class="tech-bar-fill"><div class="tech-bar-inner" style="width:75%;background:linear-gradient(90deg,#ff4466,#ffcc00)"></div></div>
+      <div class="tech-pct">YouTube</div>
+    </div>
+    <div class="tech-item">
+      <div class="tech-name">qrcode / Jimp / canvas</div>
+      <div class="tech-bar-fill"><div class="tech-bar-inner" style="width:55%;background:linear-gradient(90deg,#00ccff,#aa88ff)"></div></div>
+      <div class="tech-pct">Images</div>
+    </div>
+  </div>
+
+  <!-- GROUP FEATURES -->
+  <div class="section-header" data-reveal>
+    <span class="section-title">// PER-GRUPPE FEATURES</span>
+  </div>
+
+  <div class="feature-grid" data-reveal>
+    <div class="feature-toggle">
+      <div class="toggle-switch"></div>
+      <div><div class="feature-name">👋 Welcome</div><div class="feature-desc">Custom Begrüßungsnachrichten mit @user Placeholder</div></div>
+    </div>
+    <div class="feature-toggle">
+      <div class="toggle-switch"></div>
+      <div><div class="feature-name">👋 Goodbye</div><div class="feature-desc">Abschiedsnachrichten wenn Mitglieder die Gruppe verlassen</div></div>
+    </div>
+    <div class="feature-toggle">
+      <div class="toggle-switch"></div>
+      <div><div class="feature-name">📊 Leveling</div><div class="feature-desc">+1 XP pro Nachricht, Level-System pro Gruppe</div></div>
+    </div>
+    <div class="feature-toggle">
+      <div class="toggle-switch"></div>
+      <div><div class="feature-name">🔗 AntiLink</div><div class="feature-desc">WA/Telegram/Discord Links werden automatisch gelöscht</div></div>
+    </div>
+    <div class="feature-toggle">
+      <div class="toggle-switch"></div>
+      <div><div class="feature-name">🚫 AntiSpam</div><div class="feature-desc">Nachrichten innerhalb 5s vom selben User werden gelöscht</div></div>
+    </div>
+    <div class="feature-toggle">
+      <div class="toggle-switch"></div>
+      <div><div class="feature-name">🔞 Anti-NSFW</div><div class="feature-desc">Bilder werden automatisch entfernt</div></div>
+    </div>
+    <div class="feature-toggle">
+      <div class="toggle-switch"></div>
+      <div><div class="feature-name">🤖 AntiBot</div><div class="feature-desc">Neue Mitglieder mit „Bot" im Namen werden entfernt</div></div>
+    </div>
+    <div class="feature-toggle">
+      <div class="toggle-switch"></div>
+      <div><div class="feature-name">🎨 AutoSticker</div><div class="feature-desc">Sticker werden in dieser Gruppe automatisch gelöscht</div></div>
+    </div>
+    <div class="feature-toggle">
+      <div class="toggle-switch"></div>
+      <div><div class="feature-name">🤐 MuteGC</div><div class="feature-desc">Gruppe auf Nur-Admins schalten (einmalig)</div></div>
+    </div>
+    <div class="feature-toggle">
+      <div class="toggle-switch"></div>
+      <div><div class="feature-name">😊 AutoReact</div><div class="feature-desc">Bot reagiert automatisch auf jede Nachricht mit 😊</div></div>
+    </div>
+    <div class="feature-toggle">
+      <div class="toggle-switch"></div>
+      <div><div class="feature-name">🚨 Eilmeldungen</div><div class="feature-desc">Standard: aktiviert. Empfängt globale Eilmeldungen vom Owner</div></div>
+    </div>
+    <div class="feature-toggle">
+      <div class="toggle-switch toggle-off"></div>
+      <div><div class="feature-name">🚷 Badwords</div><div class="feature-desc">Verbotene Wörter — Nachrichten werden sofort gelöscht</div></div>
+    </div>
+  </div>
+
+  <!-- FISHING TABLE -->
+  <div class="section-header" data-reveal>
+    <span class="section-title">// FISHING — TOP CATCHES</span>
+  </div>
+
+  <div class="terminal" data-reveal>
+    <div class="terminal-header">
+      <div class="dot dot-red"></div>
+      <div class="dot dot-yellow"></div>
+      <div class="dot dot-green"></div>
+      <span class="terminal-title">fishes.db — 45 Fische verfügbar</span>
+    </div>
+    <div class="terminal-body" style="padding:0;">
+      <table class="db-table">
+        <tr><th>Fisch</th><th>Min Coins</th><th>Max Coins</th><th>Chance</th><th>Seltenheit</th></tr>
+        <tr><td>🧜‍♀️ Meerjungfrau</td><td>5000</td><td>10000</td><td>0.001%</td><td>Ultra-Legendary</td></tr>
+        <tr><td>🐉 Leviathan</td><td>2000</td><td>5000</td><td>0.02%</td><td>Boss</td></tr>
+        <tr><td>🐳 Megalodon</td><td>1000</td><td>2000</td><td>0.05%</td><td>Ultra-Rare</td></tr>
+        <tr><td>🌌 Sternenfisch</td><td>1000</td><td>3000</td><td>0.08%</td><td>Kosmisch</td></tr>
+        <tr><td>🔥 Phönix-Fisch</td><td>800</td><td>1600</td><td>0.05%</td><td>Mythos</td></tr>
+        <tr><td>🦖 Urzeit-Fisch</td><td>600</td><td>900</td><td>0.2%</td><td>Sehr Selten</td></tr>
+        <tr><td>💎 Legendärer Thunfisch</td><td>200</td><td>400</td><td>3%</td><td>Selten</td></tr>
+        <tr><td>🦆 Ente (aus Versehen)</td><td>1</td><td>5</td><td>10%</td><td>Fun</td></tr>
+        <tr><td>🥾 Alter Stiefel</td><td>0</td><td>0</td><td>8%</td><td>Trash</td></tr>
+        <tr><td>🐟 Falco (Special)</td><td>500</td><td>500</td><td>0.0001%</td><td>Easter Egg</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- FLOW ARCHITECTURE -->
+  <div class="section-header" data-reveal>
+    <span class="section-title">// NACHRICHTEN-FLOW</span>
+  </div>
+
+  <div class="terminal" data-reveal>
+    <div class="terminal-header">
+      <div class="dot dot-red"></div>
+      <div class="dot dot-yellow"></div>
+      <div class="dot dot-green"></div>
+      <span class="terminal-title">message processing pipeline</span>
+    </div>
+    <div class="terminal-body">
+      <div><span class="t-gray">1.</span> <span class="t-blue">messages.upsert</span> <span class="t-gray">→ Nachricht empfangen</span></div>
+      <div><span class="t-gray">2.</span> <span class="t-yellow">AutoSticker Check</span> <span class="t-gray">→ Sticker löschen wenn aktiviert</span></div>
+      <div><span class="t-gray">3.</span> <span class="t-yellow">body = null?</span> <span class="t-gray">→ return (kein Text)</span></div>
+      <div><span class="t-gray">4.</span> <span class="t-yellow">Timeout Check</span> <span class="t-gray">→ User im Timeout → Nachricht löschen</span></div>
+      <div><span class="t-gray">5.</span> <span class="t-yellow">readMessages</span> <span class="t-gray">→ Als gelesen markieren</span></div>
+      <div><span class="t-gray">6.</span> <span class="t-yellow">AFK Mention Check</span> <span class="t-gray">→ Erwähnte AFK-User benachrichtigen</span></div>
+      <div><span class="t-gray">7.</span> <span class="t-yellow">Group Features</span> <span class="t-gray">→ AntiNSFW/AntiSpam/Leveling/AntiLink/Badwords</span></div>
+      <div><span class="t-gray">8.</span> <span class="t-yellow">AFK Return Check</span> <span class="t-gray">→ War User AFK? → zurück online</span></div>
+      <div><span class="t-gray">9.</span> <span class="t-yellow">Prefix Check</span> <span class="t-gray">→ Kein Prefix → return</span></div>
+      <div><span class="t-gray">10.</span> <span class="t-yellow">IP-Ban Check</span> <span class="t-gray">→ Gesperrte LID/IP → abbrechen</span></div>
+      <div><span class="t-gray">11.</span> <span class="t-yellow">User-Ban Check</span> <span class="t-gray">→ Gebannter User → nur /unbanrequest erlaubt</span></div>
+      <div><span class="t-gray">12.</span> <span class="t-yellow">Register Check</span> <span class="t-gray">→ Nicht registriert → nur /register erlaubt</span></div>
+      <div><span class="t-gray">13.</span> <span class="t-yellow">LockGroup Check</span> <span class="t-gray">→ Gruppe gesperrt → nur Team darf</span></div>
+      <div><span class="t-gray">14.</span> <span class="t-yellow">XP vergeben</span> <span class="t-gray">→ +6 XP pro Command</span></div>
+      <div><span class="t-gray">15.</span> <span class="t-yellow">DisabledCommands</span> <span class="t-gray">→ Command global deaktiviert?</span></div>
+      <div><span class="t-gray">16.</span> <span class="t-blue">switch(command)</span> <span class="t-gray">→ 180+ Cases verarbeiten</span></div>
+      <div><span class="t-gray">17.</span> <span class="t-yellow">default:</span> <span class="t-gray">→ Levenshtein-Suggestion ("Meintest du...?")</span></div>
+    </div>
+  </div>
+
+  <!-- ANTI-DELETE -->
+  <div class="section-header" data-reveal>
+    <span class="section-title">// ANTI-DELETE SYSTEM</span>
+  </div>
+
+  <div class="terminal" data-reveal>
+    <div class="terminal-header">
+      <div class="dot dot-red"></div>
+      <div class="dot dot-yellow"></div>
+      <div class="dot dot-green"></div>
+      <span class="terminal-title">anti-delete — message recovery</span>
+    </div>
+    <div class="terminal-body">
+      <div><span class="t-green">// Alle eingehenden Nachrichten werden in deleted_messages.json gecacht</span></div>
+      <br>
+      <div><span class="t-blue">protocolMessage.type === 0</span> <span class="t-gray">→ Löschung erkannt</span></div>
+      <div><span class="t-gray">→ Original-ID aus Protokoll auslesen</span></div>
+      <div><span class="t-gray">→ Nachricht aus Cache laden</span></div>
+      <div><span class="t-gray">→ Medientyp ermitteln (Bild/Video/Audio/Dokument/Sticker/Text)</span></div>
+      <div><span class="t-gray">→ Media via </span><span class="t-blue">downloadContentFromMessage</span><span class="t-gray"> herunterladen</span></div>
+      <div><span class="t-gray">→ Original im Chat wiederherstellen mit Sender-Info</span></div>
+      <br>
+      <div><span class="t-green">// Unterstützte Typen:</span></div>
+      <div><span class="t-yellow">image · video · audio · document · sticker · location · contact · text</span></div>
+    </div>
+  </div>
+
+  <!-- CREATOR / ECONOMY FLOW -->
+  <div class="section-header" data-reveal>
+    <span class="section-title">// ECONOMY LOGIC</span>
+  </div>
+
+  <div class="cards-grid" data-reveal>
+    <div class="card">
+      <span class="card-icon">💵</span>
+      <div class="card-title">CASH SYSTEM</div>
+      <p class="card-desc">Cash = Bargeld (getEconomy). Getrennt von "balance" (Legacy). Cash kann gespart, ausgegeben, geraubt werden. Minimum: 0 (nie negativ)</p>
+    </div>
+    <div class="card">
+      <span class="card-icon">🏦</span>
+      <div class="card-title">BANK SYSTEM</div>
+      <p class="card-desc">Bank = sicheres Geld. /bank deposit, /bank withdraw, /bank interest (1% Zinsen, -10 Kontoführungsgebühr). Kann nicht geraubt werden</p>
+    </div>
+    <div class="card">
+      <span class="card-icon">💎</span>
+      <div class="card-title">GEMS</div>
+      <p class="card-desc">Gems = Premium-Währung. Separates Feld in economy-Tabelle. Aktuell noch im Aufbau</p>
+    </div>
+    <div class="card">
+      <span class="card-icon">⚔️</span>
+      <div class="card-title">JAIL SYSTEM</div>
+      <p class="card-desc">sendToJail(jid, ms) setzt jailedUntil. Im Gefängnis: Crime schlägt fehl. /jail zeigt verbleibende Zeit. Automatische Entlassung nach Ablauf</p>
+    </div>
+    <div class="card">
+      <span class="card-icon">🔑</span>
+      <div class="card-title">CREATOR CODES</div>
+      <p class="card-desc">Owner kann Creator Codes generieren (z.B. CREATOR_ABC123). Einlösen gibt 100.000 Cash. Pro User nur 1x einlösbar. Redeems werden gezählt</p>
+    </div>
+    <div class="card">
+      <span class="card-icon">🎟️</span>
+      <div class="card-title">REDEEM CODES</div>
+      <p class="card-desc">Team kann Codes mit beliebigem Cash-Betrag erstellen. Codes können deaktiviert werden. Pro User einmalig einlösbar. /redeem list für Übersicht</p>
+    </div>
+  </div>
+
+  <!-- AI MODELS -->
+  <div class="section-header" data-reveal>
+    <span class="section-title">// KI-MODELL KONFIGURATION</span>
+  </div>
+
+  <div class="terminal" data-reveal>
+    <div class="terminal-header">
+      <div class="dot dot-red"></div>
+      <div class="dot dot-yellow"></div>
+      <div class="dot dot-green"></div>
+      <span class="terminal-title">apiConfig.json — AI Provider Setup</span>
+    </div>
+    <div class="terminal-body">
+      <div><span class="t-green">// Verfügbare KI-Modelle (konfigurierbar per User via /config ai):</span></div>
+      <br>
+      <div><span class="t-yellow">Claude</span> <span class="t-gray">→ Anthropic Claude (apiConfig.claude.apiKey)</span></div>
+      <div><span class="t-yellow">Groq</span> <span class="t-gray">→ Groq Cloud LLM (apiConfig.groq.apiKey)</span></div>
+      <div><span class="t-yellow">Nyxion</span> <span class="t-gray">→ Eigener LLM-Server (NYX_API_KEY env / apiConfig.nyxion)</span></div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="t-gray">Endpoint: /v1/generate, Auth: X-API-Key Header</span></div>
+      <div><span class="t-yellow">Axiom</span> <span class="t-gray">→ Eigener ngrok-Server (AXIOM_API_KEY env)</span></div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="t-gray">Endpoint: /api/chat, Auth: Bearer Token</span></div>
+      <br>
+      <div><span class="t-green">// /nyx Command nutzt Nyxion direkt (handleNyxionMessage aus lib/nyxion.js)</span></div>
+      <div><span class="t-green">// /ai Command nutzt die User-Konfiguration aus userConfigs.json</span></div>
+      <div><span class="t-green">// Fallback-Chain: Claude → Groq → Nyxion → generische Antwort</span></div>
+    </div>
+  </div>
+
+  <!-- SESSION MANAGEMENT -->
+  <div class="section-header" data-reveal>
+    <span class="section-title">// SESSION MANAGEMENT</span>
+  </div>
+
+  <div class="terminal" data-reveal>
+    <div class="terminal-header">
+      <div class="dot dot-red"></div>
+      <div class="dot dot-yellow"></div>
+      <div class="dot dot-green"></div>
+      <span class="terminal-title">multi-session — baileys auth</span>
+    </div>
+    <div class="terminal-body">
+      <div><span class="t-green">// Sessions werden in /sessions/&lt;name&gt;/ gespeichert</span></div>
+      <div><span class="t-green">// useMultiFileAuthState() für persistente Auth</span></div>
+      <br>
+      <div><span class="t-blue">/newqr &lt;name&gt;</span>&nbsp;&nbsp;&nbsp;<span class="t-gray">→ Neue Session via QR-Code (Bild an User)</span></div>
+      <div><span class="t-blue">/newqr1 &lt;name&gt;</span>&nbsp;&nbsp;<span class="t-gray">→ Neue Session, prüft ob bereits vorhanden</span></div>
+      <div><span class="t-blue">/newqr2 &lt;name&gt;</span>&nbsp;&nbsp;<span class="t-gray">→ Neue Session, erzwingt Reset</span></div>
+      <div><span class="t-blue">/newpair &lt;name&gt; &lt;num&gt;</span> <span class="t-gray">→ Pairing-Code an Nummer</span></div>
+      <div><span class="t-blue">/killsession &lt;name&gt;</span> <span class="t-gray">→ Session logout + Ordner löschen</span></div>
+      <div><span class="t-blue">/listsessions</span>&nbsp;&nbsp;<span class="t-gray">→ Alle vorhandenen Session-Ordner auflisten</span></div>
+      <div><span class="t-blue">/reload / /restart</span> <span class="t-gray">→ pm2 restart BB</span></div>
+      <br>
+      <div><span class="t-green">// global.activeSessions = {} speichert Socket-Referenzen aller laufenden Sessions</span></div>
+    </div>
+  </div>
+
+  <!-- EXTERNAL INTEGRATIONS -->
+  <div class="section-header" data-reveal>
+    <span class="section-title">// EXTERNE INTEGRATIONEN</span>
+  </div>
+
+  <div class="cards-grid" data-reveal>
+    <div class="card">
+      <span class="card-icon">🎬</span>
+      <div class="card-title">BOTHUB API</div>
+      <p class="card-desc">Stats-Reporting an bothub.gamebot.me — Uptime, Users, Groups, Commands. Befehl: /bothub (nur Owner)</p>
+    </div>
+    <div class="card">
+      <span class="card-icon">📊</span>
+      <div class="card-title">TIKWM API</div>
+      <p class="card-desc">TikTok-Video-Download ohne Wasserzeichen. /tok und /tok2 Befehle. Kostenlose API</p>
+    </div>
+    <div class="card">
+      <span class="card-icon">📷</span>
+      <div class="card-title">INSTAGRAM DL</div>
+      <p class="card-desc">@neelegirl/downloader für Instagram Reels. Unterstützt Video, Bild und Multi-Post</p>
+    </div>
+    <div class="card">
+      <span class="card-icon">🎵</span>
+      <div class="card-title">YOUTUBE</div>
+      <p class="card-desc">yt-dlp + ffmpeg für Audio/Video. play-dl als Fallback. Spotify-URL-Info für Spotify→YouTube-Konvertierung</p>
+    </div>
+    <div class="card">
+      <span class="card-icon">🎮</span>
+      <div class="card-title">MINECRAFT</div>
+      <p class="card-desc">Direkter TCP-Connect-Test auf MC-Server. Mojang API für Spieler-UUID-Lookup. mc.bat / stopmc.bat für lokale Server-Kontrolle</p>
+    </div>
+    <div class="card">
+      <span class="card-icon">🔊</span>
+      <div class="card-title">KOKORO TTS</div>
+      <p class="card-desc">Text-to-Speech via Claude-kompatible API. 6 Stimmen (af_heart, am_michael, bf_emma, bm_george etc.)</p>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  <div style="font-family:'Bebas Neue',sans-serif;font-size:2rem;color:var(--accent);letter-spacing:3px;margin-bottom:1rem;">BEASTBOT</div>
+  <div>Besitzer: <span>Beastmeds</span> · Co-Owner: <span>Lian</span></div>
+  <div style="margin-top:0.5rem;">Version: <span>2.1.0</span> · Runtime: <span>Node.js + Baileys</span> · DB: <span>SQLite + JSON</span></div>
+  <div style="margin-top:0.5rem;">~6800 Zeilen Code · 180+ Commands · 15 Menü-Kategorien · 8 DB-Tabellen</div>
+  <div style="margin-top:1rem;color:rgba(136,136,153,0.5);font-size:0.65rem;">// GENERATED FOR AI AGENT KNOWLEDGE BASE — ALL INFORMATION EXTRACTED FROM SOURCE CODE</div>
+</footer>
+
+<script>
+  // Reveal on scroll
+  const reveals = document.querySelectorAll('[data-reveal]');
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); } });
+  }, { threshold: 0.1 });
+  reveals.forEach(el => observer.observe(el));
+
+  // Stagger cmd items
+  document.querySelectorAll('.cmd-item').forEach((el, i) => {
+    el.style.animationDelay = `${i * 20}ms`;
+    el.style.opacity = '0';
+    el.style.animation = `fadeIn 0.3s ease ${i * 15}ms forwards`;
+  });
+
+  const style = document.createElement('style');
+  style.textContent = `@keyframes fadeIn { to { opacity: 1; } }`;
+  document.head.appendChild(style);
+</script>
+</body>
+</html>
